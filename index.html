@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Para Andrea ❤️</title>
+    <style>
+        /* CSS UNIFICADO */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020205;
+        }
+
+        #galaxy-canvas {
+            display: block;
+        }
+
+        #ui-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            pointer-events: none;
+            z-index: 10;
+            width: 100%;
+        }
+
+        #message {
+            color: white;
+            font-family: 'Georgia', serif;
+            font-size: 1.2rem;
+	    padding: 0 20px;
+            font-style: italic;
+            letter-spacing: 4px;
+            opacity: 0;
+            transition: opacity 2s ease;
+            text-shadow: 0 0 15px rgba(255, 105, 180, 0.8);
+        }
+
+        #music-control {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            z-index: 20;
+            backdrop-filter: blur(5px);
+        }
+
+        #instructions {
+            position: fixed;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            color: rgba(255,255,255,0.4);
+            font-family: sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="instructions">Desliza o usa el scroll para acercarte</div>
+
+    <div id="ui-container">
+        <h1 id="message">Para Andrea, con amor infinito</h1>
+    </div>
+    
+    <button id="music-control">🎵</button>
+    
+    <audio id="background-music" loop>
+        <source src="Hecha_pa_mi-Boza.mp3" type="audio/mpeg">
+    </audio>
+
+    <canvas id="galaxy-canvas"></canvas>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // --- CONFIGURACIÓN GLOBAL---
+        const totalFotos = 1; // CAMBIA ESTO al número de fotos que tengas
+        const PARTICLE_COUNT = 500; 
+        let lerpFactor = 0;
+        let targetLerp = 0;
+
+        const scene = new THREE.Scene();
+	const isMobile = window.innerWidth < 768;
+	const camera = new THREE.PerspectiveCamera(isMobile ? 90 : 75, window.innerWidth / window.innerHeight, 0.1, 2000);
+	camera.position.z = isMobile ? 600 : 400; //Aleja la camara en moviles
+
+        const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('galaxy-canvas'), antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+
+        // --- CARGA DE TEXTURAS CON RESPALDO ---
+        const loader = new THREE.TextureLoader();
+        const texturas = [];
+        for (let i = 1; i <= totalFotos; i++) {
+            const t = loader.load(`fotos/${i}.jpg`);
+            texturas.push(t);
+        }
+
+        // --- CREAR PUNTOS PARA EL NOMBRE ---
+        function createTextPoints(text) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 400;
+            canvas.height = 200;
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 70px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, 200, 100);
+
+            const imageData = ctx.getImageData(0, 0, 400, 200).data;
+            const points = [];
+            for (let y = 0; y < 200; y += 4) {
+                for (let x = 0; x < 400; x += 4) {
+                    if (imageData[(y * 400 + x) * 4] > 128) {
+			const spacing = isMobile ? 1.5 : 2.8; //----Reduce el espacio entre fotos en el movil
+			points.push(new THREE.Vector3((x - 200) * 5.0, (100 - y) * 5.0, 0));
+                        //----points.push(new THREE.Vector3((x - 200) * spacing, (100 - y) * spacing, 0));
+                    }
+                }
+            }
+            return points;
+        }
+
+        const targetPositions = createTextPoints("Andrea");
+        const sprites = new THREE.Group();
+
+        // --- CREAR ESTRELLAS/FOTOS ---
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            const mat = new THREE.SpriteMaterial({ 
+                map: texturas[i % texturas.length], 
+                transparent: true, 
+                opacity: 1.0,
+                blending: THREE.NormalBlending 
+            });
+            
+            const sprite = new THREE.Sprite(mat);
+            const size = isMobile ? (Math.random() * 8 + 12) : (Math.random() * 10 + 20);
+            sprite.scale.set(size, size, 1);
+
+            // Posición Galaxia (Espiral)
+            const angle = i * 0.12;
+            const radius = 4 * angle;
+            sprite.position.set(
+                Math.cos(angle) * radius + (Math.random() - 0.5) * 60,
+                Math.sin(angle) * radius + (Math.random() - 0.5) * 60,
+                (Math.random() - 0.5) * 100
+            );
+
+            sprite.userData.origin = sprite.position.clone();
+            sprite.userData.target = targetPositions[i % targetPositions.length].clone();
+            sprites.add(sprite);
+        }
+        scene.add(sprites);
+
+        // --- FONDO DE ESTRELLAS PEQUEÑAS ---
+        const starGeo = new THREE.BufferGeometry();
+        const starPos = [];
+        for(let i=0; i<4000; i++) {
+            starPos.push((Math.random()-0.5)*2500, (Math.random()-0.5)*2500, -Math.random()*1500);
+        }
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+        const starMat = new THREE.PointsMaterial({color: 0xffffff, size: 0.7});
+        scene.add(new THREE.Points(starGeo, starMat));
+
+        // --- CONTROL DE INTERACCIÓN ---
+        const handleInteraction = (delta) => {
+            targetLerp = Math.min(Math.max(targetLerp + delta, 0), 1);
+            document.getElementById('message').style.opacity = targetLerp > 0.8 ? "1" : "0";
+            document.getElementById('instructions').style.opacity = targetLerp > 0.2 ? "0" : "1";
+        };
+
+        window.addEventListener('wheel', (e) => handleInteraction(e.deltaY * 0.0008));
+        
+        let touchStart = 0;
+        window.addEventListener('touchstart', e => touchStart = e.touches[0].clientY);
+        window.addEventListener('touchmove', e => {
+            //-----let delta = (touchStart - e.touches[0].clientY) * 0.005;
+	    let delta = (touchStart - e.touches[0].clientY) * 0.008; //---Aumentamos la sensibilidad
+            handleInteraction(delta);
+            touchStart = e.touches[0].clientY;
+        });
+
+        // --- ANIMACIÓN ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+	    if (!scene || !camera || !sprites) return;
+            
+            // Suavizado de la transición
+            lerpFactor += (targetLerp - lerpFactor) * 0.05;
+
+            sprites.children.forEach((sprite) => {
+                sprite.position.lerpVectors(sprite.userData.origin, sprite.userData.target, lerpFactor);
+                
+                // Rotación sutil si está en modo galaxia
+                if (lerpFactor < 0.01) {
+                    sprite.position.applyAxisAngle(new THREE.Vector3(0, 0, 1), 0.0005);
+                    sprite.userData.origin.copy(sprite.position);
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Manejo de Ventana
+        window.addEventListener('resize', () 
+	=> {
+	    if (camera && renderer) {
+            	camera.aspect = window.innerWidth / window.innerHeight;
+            	camera.updateProjectionMatrix();
+            	renderer.setSize(window.innerWidth, window.innerHeight);
+	    }
+        });
+
+        // Música
+        const btn = document.getElementById('music-control');
+        const music = document.getElementById('background-music');
+        btn.onclick = () => {
+            if(music.paused) { music.play(); btn.innerText = "⏸️"; }
+            else { music.pause(); btn.innerText = "🎵"; }
+        };
+    </script>
+</body>
+</html>
