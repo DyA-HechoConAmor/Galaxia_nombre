@@ -34,7 +34,7 @@
             color: white;
             font-family: 'Georgia', serif;
             font-size: 1.2rem;
-	    padding: 0 20px;
+	        padding: 0 20px;
             font-style: italic;
             letter-spacing: 4px;
             opacity: 0;
@@ -95,7 +95,7 @@
 
     // --- CONFIGURACIÓN GLOBAL ---
     const totalFotos = 11; // Ajusta este número a tus fotos reales
-    const PARTICLE_COUNT = 800; 
+    const PARTICLE_COUNT = 350; 
     let lerpFactor = 0;
     let targetLerp = 0;
 
@@ -103,7 +103,7 @@
     const scene = new THREE.Scene();
     const isMobile = window.innerWidth < 768;
     const camera = new THREE.PerspectiveCamera(isMobile ? 90 : 75, window.innerWidth / window.innerHeight, 0.1, 2000);
-    camera.position.z = isMobile ? 600 : 400;
+    camera.position.z = isMobile ? 800 : 400;
 
     const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('galaxy-canvas'), antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -129,7 +129,7 @@
 
         const imageData = ctx.getImageData(0, 0, 400, 200).data;
         const points = [];
-        const spacing = isMobile ? 3.5 : 5.0; // Ajuste responsivo del tamaño del nombre
+        const spacing = isMobile ? 4.5 : 5.0; // Ajuste responsivo del tamaño del nombre
 
         for (let y = 0; y < 200; y += 4) {
             for (let x = 0; x < 400; x += 4) {
@@ -154,7 +154,7 @@
         });
         
         const sprite = new THREE.Sprite(mat);
-        const size = isMobile ? (Math.random() * 10 + 15) : (Math.random() * 10 + 25);
+        const size = isMobile ? (Math.random() * 5 + 10) : (Math.random() * 10 + 25);
         sprite.scale.set(size, size, 1);
 
         const angle = i * 0.12;
@@ -240,6 +240,7 @@
 </body>
 
 </html>
+
 
 
 
