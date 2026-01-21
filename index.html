@@ -188,8 +188,6 @@
             document.getElementById('message').style.opacity = targetLerp > 0.8 ? "1" : "0";
             document.getElementById('instructions').style.opacity = targetLerp > 0.2 ? "0" : "1";
         };
-
-        window.addEventListener('wheel', (e) => handleInteraction(e.deltaY * 0.0008));
         
         let touchStart = 0;
         window.addEventListener('touchstart', e => touchStart = e.touches[0].clientY);
@@ -240,6 +238,8 @@
             if(music.paused) { music.play(); btn.innerText = "⏸️"; }
             else { music.pause(); btn.innerText = "🎵"; }
         };
+
+        window.addEventListener('wheel', (e) => handleInteraction(e.deltaY * 0.0008));
     </script>
 </body>
 </html>
